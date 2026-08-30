@@ -1,2 +1,2 @@
 # promptscraper
-The code is scrapping the prompts for image generation from a given facebook account. The programming language: Python.
+The code is scrapping the prompts for image generation from a given facebook account. Technologies Stack: Python, BrighData API.
