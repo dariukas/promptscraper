@@ -20,7 +20,7 @@ POSTS_DATASET_ID = "gd_lkaxegm826bjpoo9m5"
 COMMENTS_DATASET_ID = "gd_lkay758p1eanlolqw8"
 TARGET_URL = "https://www.facebook.com/profile.php?id=61576977390696"
 
-max_posts_count = 4
+max_posts_count = 5
 max_comments_count = 20
 
 
@@ -176,7 +176,7 @@ if __name__ == "__main__":
             final_output.append({
                 "post_url": p_url,
                 "post_image_url": p_image,
-                "comments_with_more_than_20_words": filtered_comments
+                "comments": filtered_comments
             })
 
         print("\n🏆 Processing complete! Saving data to repository...")
