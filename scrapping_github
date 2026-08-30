@@ -2,14 +2,14 @@ import os
 import time
 import requests
 import json
-from google.colab import userdata
 
-# 1. Fetch token securely from Google Colab Vault
-try:
-    API_KEY = userdata.get('BRIGHTDATA_API_KEY')
+# Fetch the secret securely from the GitHub environment
+API_KEY = os.environ.get('BRIGHTDATA_API_KEY')
+
+if not API_KEY:
+    raise ValueError("❌ Action required: Add 'BRIGHTDATA_API_KEY' to your GitHub Repository Secrets!")
+else:
     print("✅ Bright Data credential initialized securely.")
-except userdata.SecretNotFoundError:
-    raise ValueError("❌ Action required: Add 'BRIGHTDATA_API_KEY' to your Colab Secrets sidebar!")
 
 # Configuration Settings
 HEADERS = {
