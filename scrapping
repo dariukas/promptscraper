@@ -1,7 +1,9 @@
 import os
 import time
 import requests
+import json
 from google.colab import userdata
+from google.colab import files
 
 # 1. Fetch token securely from Google Colab Vault
 try:
@@ -17,6 +19,10 @@ HEADERS = {
 }
 POSTS_DATASET_ID = "gd_lkaxegm826bjpoo9m5"
 COMMENTS_DATASET_ID = "gd_lkay758p1eanlolqw8"
+TARGET_URL = "https://www.facebook.com/profile.php?id=61576977390696"
+
+max_posts_count = 4
+max_comments_count = 20
 
 
 def fetch_dataset_results(snapshot_id):
@@ -26,23 +32,23 @@ def fetch_dataset_results(snapshot_id):
     """
     status_url = f"https://api.brightdata.com/datasets/v3/progress/{snapshot_id}"
     print(f"   📊 Monitoring Progress (Snapshot ID: {snapshot_id})...")
-    
+
     while True:
         response = requests.get(status_url, headers=HEADERS)
-        
+
         if response.status_code != 200:
             print(f"   ❌ Progress Check Failed. HTTP Code: {response.status_code} - Body: {response.text}")
             return []
-            
+
         try:
             status_res = response.json()
         except Exception:
             print("   ❌ Monitor Progress API returned unparseable data.")
             return []
-            
+
         status = status_res.get("status")
         print(f"   Current Job Status: [{status}]")
-        
+
         if status == "ready":
             print("   ✨ Scrape complete! Downloading payload...")
             download_url = f"https://api.brightdata.com/datasets/v3/snapshot/{snapshot_id}?format=json"
@@ -52,31 +58,31 @@ def fetch_dataset_results(snapshot_id):
             except Exception:
                 print("   ❌ Failed to parse final data payload.")
                 return []
-                
+
         elif status in ["failed", "cancelled"]:
             print(f"   ❌ Scraping execution stopped by server with status: {status}")
             return []
-        
-        # Wait 15 seconds before pinging the Monitor Progress API again to avoid rate limiting
-        time.sleep(15) 
+
+        # Wait 60 seconds before pinging the Monitor Progress API again to avoid rate limiting
+        time.sleep(60)
 
 def collect_profile_posts(profile_url, max_posts=5):
     """Triggers dataset job and fetches the profile posts payload data structure."""
     print(f"\n🚀 Phase 1: Gathering posts from profile: {profile_url}")
     trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
     params = {
-        "dataset_id": POSTS_DATASET_ID, 
+        "dataset_id": POSTS_DATASET_ID,
         "include_errors": "true"
     }
     payload = [{"url": profile_url, "num_of_posts": max_posts, "start_date": "", "end_date": ""}]
-    
+
     response = requests.post(trigger_url, headers=HEADERS, params=params, json=payload)
-    
+
     if response.status_code != 200:
         print(f"❌ Phase 1 Trigger failed! HTTP Code: {response.status_code}")
         print(f"📋 Raw text body received: {response.text}")
         return []
-        
+
     try:
         res_data = response.json()
         # Bright Data returns either a list with dict info or a single dict object
@@ -87,11 +93,11 @@ def collect_profile_posts(profile_url, max_posts=5):
     except Exception:
         print(f"❌ Phase 1 returned bad JSON string format: {response.text}")
         return []
-        
+
     if not snapshot_id:
         print("❌ Trigger worked, but no 'snapshot_id' found in response body:", res_data)
         return []
-        
+
     return fetch_dataset_results(snapshot_id)
 
 
@@ -100,17 +106,17 @@ def collect_post_comments(post_url, max_comments=20):
     print(f"\n💬 Phase 2: Analyzing comments on post URL -> {post_url}")
     trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
     params = {
-        "dataset_id": COMMENTS_DATASET_ID, 
+        "dataset_id": COMMENTS_DATASET_ID,
         "include_errors": "true"
     }
     payload = [{"url": post_url, "get_all_replies": True, "limit_records": max_comments, "comments_sort": ""}]
-    
+
     response = requests.post(trigger_url, headers=HEADERS, params=params, json=payload)
-    
+
     if response.status_code != 200:
         print(f"❌ Phase 2 Trigger failed! HTTP Code: {response.status_code}")
         return []
-        
+
     try:
         res_data = response.json()
         if isinstance(res_data, list) and len(res_data) > 0:
@@ -119,27 +125,26 @@ def collect_post_comments(post_url, max_comments=20):
             snapshot_id = res_data.get("snapshot_id")
     except Exception:
         return []
-        
+
     if not snapshot_id:
         return []
-        
+
     return fetch_dataset_results(snapshot_id)
 
+import json
+from google.colab import files
 
-# === MAIN EXECUTION PIPELINE ===
 if __name__ == "__main__":
-    # Your target profile endpoint link structure
-    target_profile = "https://www.facebook.com/profile.php?id=61576977390696"
     final_output = []
 
     # Pull the initial post items array
-    scraped_posts = collect_profile_posts(target_profile, max_posts=3)
+    scraped_posts = collect_profile_posts(TARGET_URL, max_posts_count)
 
     if scraped_posts and isinstance(scraped_posts, list):
         for post in scraped_posts:
             p_url = post.get("url")
             p_image = post.get("post_image")
-            
+
             # Extract nested attachment images layout securely
             attachments = post.get("attachments")
             if not p_image and attachments:
@@ -154,26 +159,42 @@ if __name__ == "__main__":
                 continue
 
             # Pull raw comment streams for this specific post mapping item
-            raw_comments = collect_post_comments(p_url, max_comments=20)
+            raw_comments = collect_post_comments(p_url, max_comments_count)
+            
+            # Use a list to maintain order and a set to prevent duplicate comments for THIS specific post
             filtered_comments = []
+            seen_comments = set()
 
             if isinstance(raw_comments, list):
                 for item in raw_comments:
                     comment_text = item.get("comment_text", "")
                     if comment_text and isinstance(comment_text, str):
-                        # Filter text items containing strictly greater than 20 words
-                        if len(comment_text.split()) > 20:
-                            filtered_comments.append(comment_text)
+                        # Clean/strip whitespace to ensure exact matches are caught properly
+                        cleaned_comment = comment_text.strip()
+                        
+                        # Filter text items containing strictly greater than 25 words AND check for duplicates
+                        if len(cleaned_comment.split()) > 25 and cleaned_comment not in seen_comments:
+                            filtered_comments.append(cleaned_comment)
+                            seen_comments.add(cleaned_comment) # Mark as seen
 
             # Build the custom aggregated payload result
             final_output.append({
                 "post_url": p_url,
                 "post_image_url": p_image,
-                "comments_with_more_than_20_words": filtered_comments
+                "comments": filtered_comments
             })
 
-        print("\n🏆 Final Processing Output complete:")
-        import pprint
-        pprint.pprint(final_output)
+        print("\n🏆 Processing complete! Saving data and initiating download...")
+        
+        # Define filename
+        filename = "scraped_results.json"
+        
+        # Save payload to a file locally in Colab environment
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(final_output, f, indent=4, ensure_ascii=False)
+            
+        # Trigger automatic browser download
+        files.download(filename)
+        
     else:
         print("\n🛑 Execution paused. No posts collected. Check trigger log details printed above.")
