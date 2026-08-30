@@ -134,7 +134,7 @@ if __name__ == "__main__":
     final_output = []
 
     # Pull the initial post items array
-    scraped_posts = collect_profile_posts(TARGET_URL, max_posts=3)
+    scraped_posts = collect_profile_posts(TARGET_URL, max_posts_count)
 
     if scraped_posts and isinstance(scraped_posts, list):
         for post in scraped_posts:
@@ -155,7 +155,7 @@ if __name__ == "__main__":
                 continue
 
             # Pull raw comment streams for this specific post mapping item
-            raw_comments = collect_post_comments(p_url, max_comments=20)
+            raw_comments = collect_post_comments(p_url, max_comments_count)
             
             # Use a list to maintain order and a set to prevent duplicate comments
             filtered_comments = []
