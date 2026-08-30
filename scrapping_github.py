@@ -20,8 +20,8 @@ POSTS_DATASET_ID = "gd_lkaxegm826bjpoo9m5"
 COMMENTS_DATASET_ID = "gd_lkay758p1eanlolqw8"
 TARGET_URL = "https://www.facebook.com/profile.php?id=61576977390696"
 
-max_posts_count = 5
-max_comments_count = 20
+max_posts_count = 4000
+max_comments_count = 50
 
 
 def fetch_dataset_results(snapshot_id):
