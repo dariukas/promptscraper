@@ -31,7 +31,7 @@ jobs:
     - name: Commit and Push Results
       run: |
         git config --global user.name "dariukas"
-        git config --global user.email "dariui.miliauskui@gmail.com"
+        git config --global user.email "dariukas@gmail.com"
         git add scraped_results.json || true
         git commit -m "Automated data update [skip ci]" || true
         git push || true
