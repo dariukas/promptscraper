@@ -131,9 +131,6 @@ def collect_post_comments(post_url, max_comments=20):
 
     return fetch_dataset_results(snapshot_id)
 
-import json
-from google.colab import files
-
 if __name__ == "__main__":
     final_output = []
 
