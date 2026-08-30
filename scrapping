@@ -3,7 +3,7 @@ import time
 import requests
 from google.colab import userdata
 
-# 1. Fetch token securely from Colab Vault
+# 1. Fetch token securely from Google Colab Vault
 try:
     API_KEY = userdata.get('BRIGHTDATA_API_KEY')
     print("✅ Bright Data credential initialized securely.")
@@ -24,8 +24,7 @@ def fetch_dataset_results(snapshot_id):
     Monitor Progress API implementation:
     Polls Bright Data API until the scraping job status returns 'ready'.
     """
-    # FIXED: Clean progress URL structure without invalid trailing characters
-    status_url = f"https://brightdata.com{snapshot_id}"
+    status_url = f"https://api.brightdata.com/datasets/v3/progress/{snapshot_id}"
     print(f"   📊 Monitoring Progress (Snapshot ID: {snapshot_id})...")
     
     while True:
@@ -46,7 +45,7 @@ def fetch_dataset_results(snapshot_id):
         
         if status == "ready":
             print("   ✨ Scrape complete! Downloading payload...")
-            download_url = f"https://brightdata.com{snapshot_id}"
+            download_url = f"https://api.brightdata.com/datasets/v3/snapshot/{snapshot_id}?format=json"
             download_res = requests.get(download_url, headers=HEADERS)
             try:
                 return download_res.json()
@@ -64,7 +63,7 @@ def fetch_dataset_results(snapshot_id):
 def collect_profile_posts(profile_url, max_posts=5):
     """Triggers dataset job and fetches the profile posts payload data structure."""
     print(f"\n🚀 Phase 1: Gathering posts from profile: {profile_url}")
-    trigger_url = "https://brightdata.com"
+    trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
     params = {
         "dataset_id": POSTS_DATASET_ID, 
         "include_errors": "true"
@@ -99,7 +98,7 @@ def collect_profile_posts(profile_url, max_posts=5):
 def collect_post_comments(post_url, max_comments=20):
     """Triggers dataset job and fetches comments payload data structures."""
     print(f"\n💬 Phase 2: Analyzing comments on post URL -> {post_url}")
-    trigger_url = "https://brightdata.com"
+    trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
     params = {
         "dataset_id": COMMENTS_DATASET_ID, 
         "include_errors": "true"
