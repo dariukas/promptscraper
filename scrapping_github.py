@@ -20,8 +20,8 @@ POSTS_DATASET_ID = "gd_lkaxegm826bjpoo9m5"
 COMMENTS_DATASET_ID = "gd_lkay758p1eanlolqw8"
 TARGET_URL = "https://www.facebook.com/profile.php?id=61576977390696"
 
-max_posts_count = 4000
-max_comments_count = 50
+max_posts_count = 1209
+max_comments_count = 20
 
 
 def fetch_dataset_results(snapshot_id):
@@ -73,7 +73,7 @@ def collect_profile_posts(profile_url, max_posts=5):
         "dataset_id": POSTS_DATASET_ID,
         "include_errors": "true"
     }
-    payload = [{"url": profile_url, "num_of_posts": "", "start_date": "", "end_date": ""}]
+    payload = [{"url": profile_url, "num_of_posts": 1209, "start_date": "", "end_date": ""}]
 
     response = requests.post(trigger_url, headers=HEADERS, params=params, json=payload)
 
