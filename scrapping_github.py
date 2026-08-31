@@ -73,7 +73,7 @@ def collect_profile_posts(profile_url, max_posts=5):
         "dataset_id": POSTS_DATASET_ID,
         "include_errors": "true"
     }
-    payload = [{"url": profile_url, "num_of_posts": max_posts, "start_date": "", "end_date": ""}]
+    payload = [{"url": profile_url, "num_of_posts": "", "start_date": "", "end_date": ""}]
 
     response = requests.post(trigger_url, headers=HEADERS, params=params, json=payload)
 
